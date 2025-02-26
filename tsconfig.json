@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+      "module": "NodeNext",
+      "target": "ES2022",
+      "moduleResolution": "nodenext",
+      "moduleDetection": "auto",
+      "esModuleInterop": true,
+      "outDir": "exports",
+      "declaration": true,
+      "allowSyntheticDefaultImports": true,
+      "resolveJsonModule": true,
+    },
+    "include": ["./src/**/*.ts"]
+  }
