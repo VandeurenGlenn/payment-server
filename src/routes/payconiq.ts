@@ -2,14 +2,13 @@ import Router from '@koa/router'
 import { CronJob } from 'cron'
 import qrcode from 'qrcode'
 import type { PayconiqPaymentCallback } from '../types.js'
+import { payments } from '../store.js'
 
 const router = new Router()
 
-const payments = new Map<string, PayconiqPaymentCallback>()
-
 const runCallback = async (payment: PayconiqPaymentCallback) => {
   // @ts-ignore
-  const response = await fetch(payment.callbackUrl, {
+  const response = await fetch(payment.creditor.callbackUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -83,10 +82,10 @@ router.post('/payconiq/v3/payments', async (ctx) => {
     createdAt: new Date().toISOString(),
     expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     _links: {
-      self: { href: `/payconiq/v3/payments/${paymentId}` },
-      cancel: { href: `/payconiq/v3/payments/${paymentId}` },
+      self: { href: `http://localhost:9090/payconiq/v3/payments/${paymentId}` },
+      cancel: { href: `http://localhost:9090/payconiq/v3/payments/${paymentId}` },
       deeplink: { href: `payconiq://payment/${paymentId.toUpperCase()}` },
-      qrcode: { href: `/payconiq/v3/payments/${paymentId}/qrcode` }
+      qrcode: { href: `http://localhost:9090/payconiq/v3/payments/${paymentId}/qrcode` }
     }
   } as PayconiqPaymentCallback
 
@@ -130,7 +129,7 @@ router.post('/payconiq/v3/payments/:paymentId/authorize', async (ctx) => {
   payments.set(paymentId, payment)
   ctx.body = payment
   // @ts-ignore
-  const response = await fetch(payment.callbackUrl, {
+  const response = await fetch(payment.creditor.callbackUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -139,7 +138,9 @@ router.post('/payconiq/v3/payments/:paymentId/authorize', async (ctx) => {
   })
 })
 
-router.post('/payconiq/v3/payments/:paymentId/pay', async (ctx) => {
+router.get('/payconiq/v3/payments/:paymentId/pay', async (ctx) => {
+  console.log(ctx.params.paymentId)
+
   const paymentId = ctx.params.paymentId
   const payment = payments.get(paymentId)
   if (!payment) {
@@ -181,7 +182,8 @@ router.get('/payconiq/v3/payments/:paymentId/qrcode', async (ctx) => {
     currency: payment.currency
   }
 
-  ctx.body = qrcode.toString(JSON.stringify(input), {
+  ctx.type = 'image/svg+xml'
+  ctx.body = await qrcode.toString(JSON.stringify(input), {
     type: 'svg',
     errorCorrectionLevel: 'H',
     margin: 1,
