@@ -27,15 +27,15 @@ const job = new CronJob(
   '* * * * *',
   () => {
     for (const [paymentId, payment] of payments) {
-      if (payment.status === 'PENDING' && new Date(payment.expireAt) < new Date()) {
+      if (payment.status === 'PENDING' && new Date(payment.expiresAt) < new Date()) {
         payment.status = 'EXPIRED'
         payments.set(paymentId, payment)
         runCallback(payment)
-      } else if (payment.status === 'AUTHORIZED' && new Date(payment.expireAt) < new Date()) {
+      } else if (payment.status === 'AUTHORIZED' && new Date(payment.expiresAt) < new Date()) {
         payment.status = 'FAILED'
         payments.set(paymentId, payment)
         runCallback(payment)
-      } else if (payment.status === 'FAILED' && new Date(payment.expireAt) > new Date()) {
+      } else if (payment.status === 'FAILED' && new Date(payment.expiresAt) > new Date()) {
         payments.delete(paymentId)
       }
     }
